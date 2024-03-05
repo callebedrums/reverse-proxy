@@ -140,7 +140,9 @@ Required:
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-with Docker Desktop installed in your local machine, you can run docker compose commands to start the entire solution
+Before executing docker compose, make sure the api and app applications a built.
+
+Eith Docker Desktop installed in your local machine, you can run docker compose commands to start the entire solution
 
 ```bash
 docker compose up --build # CTRL + C to stop the containers
