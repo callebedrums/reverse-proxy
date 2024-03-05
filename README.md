@@ -18,7 +18,9 @@ Required:
 
 ### Running api project
 
-to execute the project run
+move into the api folder `cd api`.
+
+To execute the project, run:
 
 ```bash
 ./mvnw spring-boot:run
@@ -57,3 +59,105 @@ docker run -p 9000:9000 myorg/myapp --server.port=9000
 ```
 
 You can access _http://localhost:9000/greeting_ to test it out.
+
+## /app
+
+The app folder contains an Angular application with a small Hellow World page.
+It contains a form that calls the /greeting api and print the result in the page.
+
+Required:
+
+- Node 18+
+- npm 9+
+
+### Running app project
+
+move into the app folder: `cd app`
+
+install dependencies: `npm install`
+
+start the application:
+
+```bash
+npm start
+```
+
+it will serve the application in the port 4200. You can access _http://localhost:4200_ to test the application.
+
+It has a proxy configuration that redirects every call to the path /api to http://localhost:8080. To test the integration with the api application we have to also start the api application in the port 8080.
+you can do it by running the api application using maven, or by running the docker image container created previously.
+
+### Running app in a docker container
+
+The Dockerfile is the recipe to build a docker container image with our app application in it.
+
+To build the docker container image we need to build our project first.
+
+```bash
+npm build # it will bundle the code and generate the assets to be served as a static web application.
+```
+
+With the project ready, we can now build our docker image
+
+```bash
+docker build -t reverse-proxy-app . # it will build a docker image with tag name reverse-proxy-app. this is the image tag used to start the container
+```
+
+Once we have our image built, we can instanciate a container and execute it
+
+```bash
+docker run -p 4200:4200 reverse-proxy-app # this will create a docker container using the recent built image, and map the port 4200 from the host to the port 4200 from the container
+```
+
+We used nginx to serve our Angular app as a pure static application, and it will also implement the reverse proxy to the backend calls
+
+## Reverse Proxy
+
+the nginx server can be used as a reverse proxy, and it is being used as such for the api application.
+
+The nginx configuration is located in the file `app/nginx/conf.d/website.conf`. and the most important configuration is the `location / ` that defines the rewrite rules for an Angular SPA
+
+but you can also find the configuration `location /api`.
+
+```nginx
+location /api {
+  rewrite ^/api/(.*)$ /$1 break;
+  proxy_pass http://reverse-proxy-api:8080;
+  proxy_redirect     off;
+  proxy_set_header   Host $host;
+}
+```
+
+it defines that every call to the path /api will be proxied to another service. in this case it will be proxied to http://reverse-proxy-api:8080.
+If we call _http://localhost:4200/api/greeting_ it will first hit the nginx server that will proxy the call to _http://reverse-proxy-api:8080/greeting_.
+The rewrite rule removes the prefix _/api/_ and forward the call to the url present in the configuration.
+
+## Docker Compose
+
+A `compose.yaml` file is provided to facilitate the execution and testing of this solution in a [docker](https://www.docker.com/) environment using [docker compose](https://docs.docker.com/compose/)
+
+Required:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+
+with Docker Desktop installed in your local machine, you can run docker compose commands to start the entire solution
+
+```bash
+docker compose up --build # CTRL + C to stop the containers
+```
+
+It will build the docker image and start them in the same network.
+
+It will expose the nginx server to the local machine port 4200. But the api service will be not exposed.
+The only way to access the api service is through the nginx reverse proxy by calling _http://localhost:4200/api_
+
+The compose.yaml file defines two services:
+
+- the _reverse-proxy-api_ service, with the api application.
+- the _reverse-proxy-app_ service, with the nginx and Angular application.
+
+The docker compose creates a virtual network for the containers. this way, the containers are reachable from one to another, and they are named the same as the services defined in the compose.yaml file.
+This way, the nginx reverse proxy can resolve the name _reverse-proxy-api_ to the container API address that holds the api application.
+
+Docker and Docker compose is not necessary to implement the reverse proxy. We used it in this project just to facilitate the test and demonstration of the reverse proxy concept.
+Nginx is also not required to implement the reverse proxy, but other web servers can be used to implement the same concept. But we recommend Nginx server for its maturity, performance, and reliability.
