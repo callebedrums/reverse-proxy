@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, Input } from '@angular/core';
 
 @Component({
@@ -13,9 +14,23 @@ export class EntryPointComponent {
   @Input()
   set entry(v: string) {
     this.$entry = v;
+    this.retrieveContext();
   }
 
   get entry(): string {
     return this.$entry;
+  }
+
+  context = '';
+
+  constructor(private http: HttpClient) {}
+
+  retrieveContext() {
+    const search = window.location.search;
+    this.http
+      .get(`/api/context/${this.entry}${search}`)
+      .subscribe((data: any) => {
+        this.context = data.content;
+      });
   }
 }
