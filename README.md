@@ -1,10 +1,43 @@
 # Reverse Proxy
 
+A Proxy is usually a machine/service that is on the border of a private network and proxy all the internet trafic from the devices connected in that natwork. It proxies all the trafic originated inside the private network.
+
+A Reverse proxy has a similar functionality, but it proxies all the trafic originated from the internet to the inside of the network devices. It is also a machine/service that is on the border of a private network, but instead of sending trafic to the internet, it is receiving trafic from the internet and proxying it to the proper device in the private network.
+
+## Quick start
+
+Required:
+
+- Java 21 (JAVA_PATH configured)
+- Maven 3.5+ (Maven bin folder in PATH env var)
+- Node 18+
+- npm 9+
+
 clone this repository and go to its folder
 
 ```bash
 git clone git@github.com:callebedrums/reverse-proxy.git
 cd reverse-proxy
+```
+
+install dependencies for the projects
+
+```bash
+cd api && ./mvnw install && cd ../ # this will move into the api folder, download dependencies and compile the project, and move back to repository folder
+```
+
+```bash
+cd app && npm install && cd ../ # this will move into the api folder, download dependencies, and move back to repository folder
+```
+
+### Build API & APP
+
+```bash
+cd api && ./mvnw install && cd ../
+```
+
+```bash
+cd api && npm run build && cd ../
 ```
 
 ## /api
@@ -150,10 +183,10 @@ docker compose up --build # CTRL + C to stop the containers
 
 It will build the docker image and start them in the same network.
 
-It will expose the nginx server to the local machine port 4200. But the api service will be not exposed.
+It will expose the nginx server to the local machine port 4200. But the api service will not be exposed.
 The only way to access the api service is through the nginx reverse proxy by calling _http://localhost:4200/api_
 
-The compose.yaml file defines two services:
+The compose.yaml file defines two services (containers):
 
 - the _reverse-proxy-api_ service, with the api application.
 - the _reverse-proxy-app_ service, with the nginx and Angular application.
@@ -163,3 +196,5 @@ This way, the nginx reverse proxy can resolve the name _reverse-proxy-api_ to th
 
 Docker and Docker compose is not necessary to implement the reverse proxy. We used it in this project just to facilitate the test and demonstration of the reverse proxy concept.
 Nginx is also not required to implement the reverse proxy, but other web servers can be used to implement the same concept. But we recommend Nginx server for its maturity, performance, and reliability.
+
+![Docker compose infra architecture](./doc/reverse-proxy-docker-compose-example.drawio.png)
